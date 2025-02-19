@@ -1,5 +1,7 @@
-# Ignore everything
-*
-# Except the specific file
+/csvs
+/ncs
+/env
+/plots
+/gribs
 !cdsapi1.py
 !cdsrequests
