@@ -5,3 +5,4 @@
 /gribs
 !cdsapi1.py
 !cdsrequests
+/__pycache__
