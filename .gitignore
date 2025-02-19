@@ -2,3 +2,4 @@
 *
 # Except the specific file
 !cdsapi1.py
+!cdsrequests
