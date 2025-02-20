@@ -89,8 +89,12 @@ def plot(netcdfFileName, variableShortName, outputFileName ):
     lat = nc.variables['latitude'][:]
     lon = nc.variables['longitude'][:]
     time = nc.variables['time'][:]
-    variable = nc.variables[variableShortName][:]
-
+    step = nc.variables['step'][:]
+    print(time, step)
+    print(type(nc.variables[variableShortName]))
+    variable = nc.variables[variableShortName][1][2][:] # select range or point, then select time. #TODO time must be selected by user. TODO allow cases where only 2 or 3 dimensions. #TODO care that 24 comes last.
+    print(variable)
+    print(variable.shape)
     #Let's create a map centered over ___
     latLower = min(lat)
     latUpper = max(lat)
@@ -114,6 +118,7 @@ def plot(netcdfFileName, variableShortName, outputFileName ):
     x,y = map(lons,lats)
 
     plt.title(f'{variableShortName} (u)') #TODO make this dynamic
+    print(variable.shape)
     temp = map.contourf(x, y, variable, cmap='coolwarm')
     cb = map.colorbar(temp,"right", size="5%", pad="2%")
     plt.title(f'{variableShortName} (u)')

@@ -7,7 +7,7 @@ request = {
     "month": "02",
     "day": ["12"],
     "time":  [
-        "00:00", "18:00", 
+        "01:00", "06:00", "18:00", 
     ],
     "data_format": "grib",
     "download_format": "unarchived",
