@@ -25,15 +25,17 @@ def downloadCSV(gribFileName, outputFileName):
             csvwriter = csv.writer(csvfile)
 
             # Initialize header
-            header = ['Latitude', 'Longitude']
-            values_list = []
-
+            header = ['Latitude', 'Longitude', 'StepRange', 'ShortName', 'Value']
+            values_list = [] #array of arrays. One array of values for each message.
+            stepRanges = [] # one per message.
+            shortNames = []
             while True:
-                gid = codes_grib_new_from_file(f)
+                gid = codes_grib_new_from_file(f) #iterates over grib files (messages). One per time and measurement
                 if gid is None:
                     break
+                stepRanges.append(codes_get(gid, 'stepRange'))
+                shortNames.append(codes_get(gid, 'shortName'))
 
-                print(f'gid: {gid}')
                 # Get the values from the GRIB file
                 values = codes_get_values(gid)
                 num_vals = len(values)
@@ -43,24 +45,35 @@ def downloadCSV(gribFileName, outputFileName):
                 lons = codes_get_double_array(gid, 'distinctLongitudes')
 
                 # Add a new Value column to the header
-                short_name = codes_get(gid, 'shortName')
-                header.append(f'Value_{short_name}')
+                # short_name = codes_get(gid, 'shortName')
+                # header.append(f'Value_{short_name}')
                 values_list.append(values)
-
+                
                 # Release the GRIB file
                 codes_release(gid)
 
             # Write the header
             csvwriter.writerow(header)
 
+            print(len(lats))
+            print("____________________")
+            print(len(lons))    
+            print("____________________")
+            print(len(stepRanges))  
+            print("____________________")
+            print(len(shortNames))  
+            print("____________________")
+            print(np.shape(values_list))
             # Write the data
-            for i in range(num_vals):
-                row = [lats[i % len(lats)], lons[i % len(lons)]]
-                for values in values_list:
+            for j, values2 in enumerate(values_list):
+                for i in range(len(values2)):
+                    row = [lats[i % len(lats)], lons[i % len(lons)]] # mod because we reuse lats and lons when a new message starts. TODO check if this is correct
+                    row.append(stepRanges[j])
+                    row.append(shortNames[j])
                     row.append(values[i])
-                csvwriter.writerow(row)
+                    csvwriter.writerow(row)
 
-            print(f'{num_vals} values written to csvs/{outputFileName}.csv')
+            print(f'values written to csvs/{outputFileName}.csv')
 
 def toNetCDF(gribFileName, outputFileName):
     ds = cfgrib.open_file(f'gribs/{gribFileName}.grib')
@@ -109,9 +122,40 @@ def plot(netcdfFileName, variableShortName, outputFileName ):
     plt.savefig(f'plots/{outputFileName}.png', format='png', dpi=300)
     print(f'Plot saved to plots/{outputFileName}.png')
 
+def keys(gribFileName):
+    f = open(f'gribs/{gribFileName}.grib', 'rb')
+ 
+    while 1: #iterates over grib files (messages). One per time and measurement
+        print('_____________________________')
+        gid = codes_grib_new_from_file(f)
+        if gid is None:
+            break
+ 
+        iterid = codes_keys_iterator_new(gid, 'ls')
+ 
+        # Different types of keys can be skipped
+        # codes_skip_computed(iterid)
+        # codes_skip_coded(iterid)
+        # codes_skip_edition_specific(iterid)
+        # codes_skip_duplicates(iterid)
+        # codes_skip_read_only(iterid)
+        # codes_skip_function(iterid)
+ 
+        while codes_keys_iterator_next(iterid):
+            keyname = codes_keys_iterator_get_name(iterid)
+            keyval = codes_get_string(gid, keyname)
+            print("%s = %s" % (keyname, keyval))
+ 
+        codes_keys_iterator_delete(iterid)
+        codes_release(gid)
+ 
+    f.close()
+ 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process GRIB data.')
     parser.add_argument('--download', metavar='OUTPUT_FILE', help='Download data to the specified file')
+    parser.add_argument('--view', metavar='INPUT_FILE', help='See keys of the GRIB file')
     parser.add_argument('--csv', nargs=2, metavar=('GRIB_FILE', 'CSV_FILE'), help='Convert GRIB file to CSV')
     parser.add_argument('--netcdf', nargs=2, metavar=('GRIB_FILE', 'NETCDF_FILE'), help='Convert GRIB file to NetCDF')
     parser.add_argument('--plot', nargs=3, metavar=('NETCDF_FILE', 'VAR_SHORT_NAME', 'PNG_FILE'), help='Plot data')
@@ -120,6 +164,8 @@ if __name__ == '__main__':
 
     if args.download:
         download(args.download)
+    if args.view:
+        keys(args.view)
     if args.csv:
         gribFileName, outputFileName = args.csv
         downloadCSV(gribFileName, outputFileName)

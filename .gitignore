@@ -6,3 +6,6 @@
 !cdsapi1.py
 !cdsrequests
 /__pycache__
+/build
+/eccodes-2.40.0-Source
+/eccodesInstallation
